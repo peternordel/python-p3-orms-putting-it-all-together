@@ -1,4 +1,4 @@
-import sqlite3
+import sqlite3, ipdb
 
 CONN = sqlite3.connect('lib/dogs.db')
 CURSOR = CONN.cursor()
@@ -62,8 +62,11 @@ class Dog:
     @classmethod
     def find_by_name(cls, name):
         sql = "SELECT * FROM dogs WHERE name = ? LIMIT 1"
-        found_dog = CURSOR.execute(sql, (name,)).fetchone()
-        return cls.new_from_db(found_dog)
+        sql_command = CURSOR.execute(sql, (name,)).fetchone()
+        if sql_command == None:
+            return None
+        else:
+            return cls.new_from_db(sql_command)
     
     @classmethod
     def find_by_id(cls, id):
@@ -71,3 +74,21 @@ class Dog:
         found_dog = CURSOR.execute(sql, (id,)).fetchone()
         return cls.new_from_db(found_dog)
     
+    @classmethod
+    def find_or_create_by(cls, name, breed):
+        dog_previously_exists = cls.find_by_name(name)
+        if dog_previously_exists == None:
+            return cls.create(name, breed)
+        else:
+            return dog_previously_exists
+
+    
+    def update(self):
+        sql = """
+            UPDATE dogs
+            SET name = ?, breed = ?
+            WHERE id = ?
+        """
+
+        CURSOR.execute(sql, (self.name, self.breed, self.id))
+        CONN.commit()
